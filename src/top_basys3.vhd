@@ -67,17 +67,79 @@ architecture top_basys3_arch of top_basys3 is
                 o_clk    : out std_logic		   -- divided (slow) clock
         );
     end component clock_divider;
+    
+--    signal declarations
+	signal w_clk : std_logic;
+	signal w_floor: STD_LOGIC_VECTOR (3 downto 0);	
+	signal w_seg_n: STD_LOGIC_VECTOR (6 downto 0);
+	signal w_clk_reset: std_logic;
+	signal w_elevator_reset: std_logic;
+	signal w_tdm_data : std_logic_vector(3 downto 0);
+    signal w_tdm_sel  : std_logic_vector(3 downto 0);
+    
+    --Floor 2 Declarations
+    signal w_floor2: STD_LOGIC_VECTOR (3 downto 0);
+    
 	
 begin
 	-- PORT MAPS ----------------------------------------
-    	
+   
+    clock_dividerinst: clock_divider
+    generic map ( k_DIV => 25000000 ) 
+    port map(
+        i_clk => clk,
+        i_reset => w_clk_reset,
+        o_clk => w_clk
+        	);
+   elevator1_fsminst: elevator_controller_fsm
+        port map(
+        i_clk => w_clk, 
+        i_reset => w_elevator_reset,
+        is_stopped => sw(0),
+        go_up_down => sw(1),
+        o_floor => w_floor
+   );
+   
+   elevator2_fsminst: elevator_controller_fsm
+    port map(
+        i_clk => w_clk,
+        i_reset => w_elevator_reset, 
+        is_stopped => sw(14),
+        go_up_down => sw(15),
+        o_floor => w_floor2
+    );
+   
+
+    
+    TDM4_inst : TDM4
+    port map(
+    i_clk => w_clk,
+    i_reset => btnU,
+    i_D3 => "1111",
+    i_D2 => w_floor2, 
+    i_D1 => "1111", 
+    i_D0 => w_floor,
+    o_data => w_tdm_data,
+    o_sel  => w_tdm_sel
+    
+    );
+    
+       sevensegdecoder_inst:sevenseg_decoder
+    port map(
+    i_Hex => w_tdm_data,
+    o_seg_n => seg
+    
+    );
 	
 	-- CONCURRENT STATEMENTS ----------------------------
 	
 	-- LED 15 gets the FSM slow clock signal. The rest are grounded.
+	led(15) <= w_clk;
 	
+	an  <= w_tdm_sel;
 	-- leave unused switches UNCONNECTED. Ignore any warnings this causes.
 	
 	-- reset signals
-	
+	w_elevator_reset <= btnR or btnU;
+    w_clk_reset      <= btnU or btnL;
 end top_basys3_arch;
