@@ -68,8 +68,11 @@ architecture top_basys3_arch of top_basys3 is
         );
     end component clock_divider;
     
+   
+    
 --    signal declarations
 	signal w_clk : std_logic;
+	signal w_clkTDM : std_logic;
 	signal w_floor: STD_LOGIC_VECTOR (3 downto 0);	
 	signal w_seg_n: STD_LOGIC_VECTOR (6 downto 0);
 	signal w_clk_reset: std_logic;
@@ -90,6 +93,13 @@ begin
         i_clk => clk,
         i_reset => w_clk_reset,
         o_clk => w_clk
+        	);
+    clock_dividerinstTDM: clock_divider
+    generic map ( k_DIV => 450 ) 
+    port map(
+        i_clk => clk,
+        i_reset => w_clk_reset,
+        o_clk => w_clkTDM
         	);
    elevator1_fsminst: elevator_controller_fsm
         port map(
@@ -113,7 +123,7 @@ begin
     
     TDM4_inst : TDM4
     port map(
-    i_clk => w_clk,
+    i_clk => w_clkTDM,
     i_reset => btnU,
     i_D3 => "1111",
     i_D2 => w_floor2, 
